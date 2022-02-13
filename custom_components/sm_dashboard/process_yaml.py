@@ -10,6 +10,7 @@ _LOGGER = logging.getLogger(__name__)
 
 def load_yamll(fname, secrets = None, args={}):
     try:
+        _LOGGER.warn('sm dashboard')
         with open(fname, encoding="utf-8") as config_file:
             return loader.yaml.load(config_file, Loader=lambda stream: loader.SafeLineLoader(stream, secrets)) or OrderedDict()
     except loader.yaml.YAMLError as exc:
@@ -33,4 +34,6 @@ def _include_yaml(ldr, node):
         _LOGGER.error("Unable to include file %s: %s", fname, exc);
         raise HomeAssistantError(exc)
 
+_LOGGER.warning("test sm_dashboard")
+loader.load_yaml = load_yamll
 loader.SafeLineLoader.add_constructor("!include", _include_yaml)

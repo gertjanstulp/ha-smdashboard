@@ -1,10 +1,11 @@
 import logging
 
-from .const import DOMAIN
 from .process_yaml import process_yaml
 # from .notifications import notifications
 
 _LOGGER = logging.getLogger(__name__)
+
+DOMAIN = "sm_dashboard"
 
 async def async_setup(hass, config):
     hass.data[DOMAIN] = {
@@ -22,6 +23,10 @@ async def async_setup_entry(hass, config_entry):
 
     config_entry.add_update_listener(_update_listener) 
 
+    return True
+
+
+async def async_remove_entry(hass, entry):
     return True
 
 async def _update_listener(hass, config_entry):
