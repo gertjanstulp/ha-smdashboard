@@ -1,11 +1,12 @@
 {
-    "domain": "sm_dashboard",
-    "name": "SM Dashboard",
-    "documentation": "",
-    "issue_tracker": "",
-    "dependencies": ["lovelace", "http", "frontend"],
-    "codeowners": ["@gertjanstulp"],
-    "config_flow": true,
-    "version": "1.0.0",
-    "iot_class": "calculated"
-  }
+  "domain": "sm_dashboard",
+  "name": "SM Dashboard",
+  "documentation": "",
+  "issue_tracker": "",
+  "version": "1.0.0",
+  "dependencies": ["lovelace", "http", "frontend"],
+  "codeowners": ["@gertjanstulp"],
+  "requirements": [],
+  "config_flow": true,
+  "iot_class": "calculated"
+}
