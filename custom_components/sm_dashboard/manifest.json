@@ -5,7 +5,7 @@
     "issue_tracker": "",
     "dependencies": ["lovelace", "http", "frontend"],
     "codeowners": ["@gertjanstulp"],
-    "config_flow": false,
+    "config_flow": true,
     "version": "1.0.0",
     "iot_class": "calculated"
   }
