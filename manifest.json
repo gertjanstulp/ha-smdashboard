@@ -1,0 +1,11 @@
+{
+    "domain": "sm_dashboard",
+    "name": "SM Dashboard",
+    "documentation": "",
+    "issue_tracker": "",
+    "dependencies": ["lovelace", "http", "frontend"],
+    "codeowners": ["@gertjanstulp"],
+    "config_flow": false,
+    "version": "1.0.0",
+    "iot_class": "calculated"
+  }
