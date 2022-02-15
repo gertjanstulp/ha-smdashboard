@@ -1,10 +1,11 @@
 import logging
 
 from homeassistant import config_entries
+from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
-@config_entries.HANDLERS.register("sm_dashboard")
+@config_entries.HANDLERS.register(DOMAIN)
 class SmDashboardConfigFlow(config_entries.ConfigFlow):
     async def async_step_user(self, user_input=None):
         if self._async_current_entries():
