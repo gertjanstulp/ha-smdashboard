@@ -21,6 +21,13 @@ jinja = jinja2.Environment(loader=jinja2.FileSystemLoader("/"))
 jinja.filters['fromjson'] = fromjson
 
 sm_dashboard_global = {}
+sm_dashboard_translations = {}
+sm_dashboard_icons = {}
+
+LANGUAGES = {
+    "English": "en",
+    "Dutch": "nl"
+}
 
 def load_yamll(fname, secrets = None, args={}):
     _LOGGER.info("Load_yamll: %s", fname)
@@ -35,7 +42,9 @@ def load_yamll(fname, secrets = None, args={}):
         if process_yaml:
             stream = io.StringIO(jinja.get_template(fname).render({
                 **args,
-                "_dd_global": sm_dashboard_global
+                "_smd_global": sm_dashboard_global,
+                "_smd_translations": sm_dashboard_translations,
+                "_smd_icons": sm_dashboard_icons
                 }))
             stream.name = fname
             return loader.yaml.load(stream, Loader=lambda _stream: loader.SafeLineLoader(_stream, secrets)) or OrderedDict()
@@ -74,11 +83,27 @@ def process_yaml(hass, entry):
             installed = "true"
         else:
             installed = "false"
+        
+        #Translations
+        if ("language" in entry.options):
+            language = LANGUAGES[entry.options["language"]]
+        else:
+            language = "en"
+        translations = load_yamll(hass.config.path("lovelace/sm-dashboard/resources/translations/"+language+".yaml"))
+        sm_dashboard_translations.update(translations[language])
+
+        #Icons
+        icons = load_yamll(hass.config.path("lovelace/sm-dashboard/resources/icons.yaml"))
+        sm_dashboard_icons.clear()
+        if isinstance(icons, dict):
+            if ("icons" in icons):
+                sm_dashboard_icons.update(icons["icons"])
 
         sm_dashboard_global.update(
             [
                 ("version", VERSION),
-                ("installed", installed)
+                ("installed", installed),
+                ("language", language)
             ]
         )
 
@@ -125,4 +150,16 @@ def reload_configuration(hass):
             ]
         )
         
+        #Translations
+        language = sm_dashboard_global["language"]
+        translations = load_yamll(hass.config.path("lovelace/sm-dashboard/resources/translations/"+language+".yaml"))
+        sm_dashboard_translations.update(translations[language])
+
+        #Icons
+        icons = load_yamll(hass.config.path("lovelace/sm-dashboard/resources/icons.yaml"))
+        sm_dashboard_icons.clear()
+        if isinstance(icons, dict):
+            if ("icons" in icons):
+                sm_dashboard_icons.update(icons["icons"])
+                
     hass.bus.async_fire("sm_dashboard_reload")

@@ -21,7 +21,7 @@ def load_plugins(hass, name):
     add_extra_js_url(hass, "/sm_dashboard/cards/sm-wrapper-card/sm-wrapper-card.js")
     add_extra_js_url(hass, "/sm_dashboard/cards/sm-flexbox-card/sm-flexbox-card.js")
     add_extra_js_url(hass, "/sm_dashboard/cards/sm-hash-switch-card/sm-hash-switch-card.js")
-    add_extra_js_url(hass, "/sm_dashboard/cards/sm-weather-card/sm-weather-card.js")
+    # add_extra_js_url(hass, "/sm_dashboard/cards/sm-weather-card/sm-weather-card.js")
     add_extra_js_url(hass, "/sm_dashboard/cards/sm-notification-card/sm-notification-card.js")
     add_extra_js_url(hass, "/sm_dashboard/cards/sm-collapse-card/sm-collapse-card.js")
     add_extra_js_url(hass, "/sm_dashboard/cards/sm-cover-card/sm-cover-card.js")
