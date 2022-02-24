@@ -1,3 +1,4 @@
+import datetime
 import logging
 import os
 import logging
@@ -11,14 +12,15 @@ from homeassistant.exceptions import HomeAssistantError
 
 from .const import DOMAIN, VERSION
 
-_LOGGER = logging.getLogger(__name__)
+from .jinja import fromjson, dayfromnow, windicon
 
-def fromjson(value):
-    return json.loads(value)
+_LOGGER = logging.getLogger(__name__)
 
 jinja = jinja2.Environment(loader=jinja2.FileSystemLoader("/"))
 
 jinja.filters['fromjson'] = fromjson
+jinja.filters['dayfromnow'] = dayfromnow
+jinja.filters['windicon'] = windicon
 
 sm_dashboard_global = {}
 sm_dashboard_translations = {}
@@ -103,7 +105,8 @@ def process_yaml(hass, entry):
             [
                 ("version", VERSION),
                 ("installed", installed),
-                ("language", language)
+                ("language", language),
+                ("hass", hass)
             ]
         )
 
