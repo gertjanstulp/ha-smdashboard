@@ -61,16 +61,20 @@ def load_yamll(fname, secrets = None, args={}):
         raise HomeAssistantError(exc)
 
 def _include_yaml(ldr, node):
-    args = {}
+    vars = {}
+    additional = {}
     if isinstance(node.value, str):
         fn = node.value
     else:
-        fn, args, *_ = ldr.construct_sequence(node)
+        fn, vars, *additional = ldr.construct_sequence(node)
     fname = os.path.abspath(os.path.join(os.path.dirname(ldr.name), fn))
     try:
-        return loader._add_reference(load_yamll(fname, ldr.secrets, args=args), ldr, node)
+        yaml = load_yamll(fname, ldr.secrets, args=vars)
+        if additional and isinstance(additional, list) and len(additional) > 0:
+            yaml = yaml | additional[0]
+        return loader._add_reference(yaml, ldr, node)
     except FileNotFoundError as exc:
-        _LOGGER.error("Unable to include file %s: %s", fname, exc);
+        _LOGGER.error("Unable to include file %s: %s", fname, exc)
         raise HomeAssistantError(exc)
 
 loader.load_yaml = load_yamll
@@ -94,12 +98,7 @@ def process_yaml(hass, entry):
         translations = load_yamll(hass.config.path("lovelace/sm-dashboard/resources/translations/"+language+".yaml"))
         sm_dashboard_translations.update(translations[language])
 
-        #Icons
-        icons = load_yamll(hass.config.path("lovelace/sm-dashboard/resources/icons.yaml"))
-        sm_dashboard_icons.clear()
-        if isinstance(icons, dict):
-            if ("icons" in icons):
-                sm_dashboard_icons.update(icons["icons"])
+        load_icons(hass)
 
         sm_dashboard_global.update(
             [
@@ -140,6 +139,15 @@ def process_yaml(hass, entry):
     _LOGGER.info('Finished function to process all yaml files!')
 
 
+def load_icons(hass):
+    icons = load_yamll(hass.config.path("lovelace/sm-dashboard/resources/icons.yaml"))
+    sm_dashboard_icons.clear()
+    if isinstance(icons, dict):
+        icons_data = icons.get("icons", {})
+        if icons_data:
+            sm_dashboard_icons.update(icons_data)
+
+
 def reload_configuration(hass):
     if os.path.exists(hass.config.path("lovelace/sm-dashboard/ui-lovelace.yaml")):
         if os.path.exists(hass.config.path("custom_components/sm_dashboard/.installed")):
@@ -158,11 +166,6 @@ def reload_configuration(hass):
         translations = load_yamll(hass.config.path("lovelace/sm-dashboard/resources/translations/"+language+".yaml"))
         sm_dashboard_translations.update(translations[language])
 
-        #Icons
-        icons = load_yamll(hass.config.path("lovelace/sm-dashboard/resources/icons.yaml"))
-        sm_dashboard_icons.clear()
-        if isinstance(icons, dict):
-            if ("icons" in icons):
-                sm_dashboard_icons.update(icons["icons"])
+        load_icons(hass)
                 
     hass.bus.async_fire("sm_dashboard_reload")
