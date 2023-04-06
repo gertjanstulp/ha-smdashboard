@@ -8,6 +8,7 @@ import jinja2
 from collections import OrderedDict
 
 from homeassistant.util.yaml import loader
+from homeassistant.util.yaml.objects import NodeDictClass
 from homeassistant.exceptions import HomeAssistantError
 
 from .const import DOMAIN, VERSION
@@ -25,6 +26,7 @@ jinja.filters['windicon'] = windicon
 sm_dashboard_global = {}
 sm_dashboard_translations = {}
 sm_dashboard_icons = {}
+sm_dashboard_paths = {}
 
 LANGUAGES = {
     "English": "en",
@@ -46,13 +48,14 @@ def load_yamll(fname, secrets = None, args={}):
                 **args,
                 "_smd_global": sm_dashboard_global,
                 "_smd_translations": sm_dashboard_translations,
-                "_smd_icons": sm_dashboard_icons
+                "_smd_icons": sm_dashboard_icons,
+                "_smd_paths": sm_dashboard_paths,
                 }))
             stream.name = fname
-            return loader.yaml.load(stream, Loader=lambda _stream: loader.SafeLineLoader(_stream, secrets)) or OrderedDict()
+            return loader.yaml.load(stream, Loader=lambda _stream: loader.SafeLineLoader(_stream, secrets)) or NodeDictClass()
         else:
             with open(fname, encoding="utf-8") as config_file:
-                return loader.yaml.load(config_file, Loader=lambda stream: loader.SafeLineLoader(stream, secrets)) or OrderedDict()
+                return loader.yaml.load(config_file, Loader=lambda stream: loader.SafeLineLoader(stream, secrets)) or NodeDictClass()
     except loader.yaml.YAMLError as exc:
         _LOGGER.error(str(exc))
         raise HomeAssistantError(exc)
@@ -71,7 +74,7 @@ def _include_yaml(ldr, node):
     try:
         yaml = load_yamll(fname, ldr.secrets, args=vars)
         if additional and isinstance(additional, list) and len(additional) > 0:
-            yaml = yaml | additional[0]
+            yaml = NodeDictClass(yaml | additional[0])
         return loader._add_reference(yaml, ldr, node)
     except FileNotFoundError as exc:
         _LOGGER.error("Unable to include file %s: %s", fname, exc)
@@ -99,6 +102,7 @@ def process_yaml(hass, entry):
         sm_dashboard_translations.update(translations[language])
 
         load_icons(hass)
+        load_paths(hass)
 
         sm_dashboard_global.update(
             [
@@ -148,6 +152,15 @@ def load_icons(hass):
             sm_dashboard_icons.update(icons_data)
 
 
+def load_paths(hass):
+    paths = load_yamll(hass.config.path("lovelace/sm-dashboard/resources/paths.yaml"))
+    sm_dashboard_paths.clear()
+    if isinstance(paths, dict):
+        paths_data = paths.get("paths", {})
+        if paths_data:
+            sm_dashboard_paths.update(paths_data)
+
+
 def reload_configuration(hass):
     if os.path.exists(hass.config.path("lovelace/sm-dashboard/ui-lovelace.yaml")):
         if os.path.exists(hass.config.path("custom_components/sm_dashboard/.installed")):
@@ -167,5 +180,6 @@ def reload_configuration(hass):
         sm_dashboard_translations.update(translations[language])
 
         load_icons(hass)
+        load_paths(hass)
                 
     hass.bus.async_fire("sm_dashboard_reload")
