@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import logging
 import os
@@ -7,9 +8,11 @@ import io
 import jinja2
 from collections import OrderedDict
 
+from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
+from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.translation import async_get_translations
 from homeassistant.util.yaml import loader
 from homeassistant.util.yaml.objects import NodeDictClass
-from homeassistant.exceptions import HomeAssistantError
 
 from .const import DOMAIN, VERSION
 
@@ -27,6 +30,7 @@ sm_dashboard_global = {}
 sm_dashboard_translations = {}
 sm_dashboard_icons = {}
 sm_dashboard_paths = {}
+hass_resources = {}
 
 LANGUAGES = {
     "English": "en",
@@ -37,17 +41,18 @@ def load_yamll(fname, secrets = None, args={}):
     _LOGGER.info("Load_yamll: %s", fname)
     try:
         
-        process_yaml = False
+        _process_yaml = False
         with open(fname, encoding="utf-8") as f:
             if f.readline().lower().startswith(("# sm_dashboard")):
-                process_yaml = True
+                _process_yaml = True
                 _LOGGER.info("Marked as sm_dashboard: %s", fname)
 
-        if process_yaml:
+        if _process_yaml:
             stream = io.StringIO(jinja.get_template(fname).render({
                 **args,
                 "_smd_global": sm_dashboard_global,
                 "_smd_translations": sm_dashboard_translations,
+                "_hass_resources": hass_resources,
                 "_smd_icons": sm_dashboard_icons,
                 "_smd_paths": sm_dashboard_paths,
                 }))
@@ -83,7 +88,7 @@ def _include_yaml(ldr, node):
 loader.load_yaml = load_yamll
 loader.SafeLineLoader.add_constructor("!include", _include_yaml)
 
-def process_yaml(hass, entry):
+async def async_process_yaml(hass, entry):
 
     _LOGGER.info('Start of function to process all yaml files!')
 
@@ -98,8 +103,18 @@ def process_yaml(hass, entry):
             language = LANGUAGES[entry.options["language"]]
         else:
             language = "en"
-        translations = load_yamll(hass.config.path("lovelace/sm-dashboard/resources/translations/"+language+".yaml"))
-        sm_dashboard_translations.update(translations[language])
+        sm_translations = load_yamll(hass.config.path(f"lovelace/sm-dashboard/resources/translations/{language}.yaml"))
+        sm_dashboard_translations.update(sm_translations[language])
+
+        # try:
+        #     hass_resources.update(await async_get_translations(hass, language, "entity_component"))
+        #     hass_resources.update(await async_get_translations(hass, language, "entity"))
+        #     hass_resources.update(await async_get_translations(hass, language, "state"))
+        #     hass_resources.update(await async_get_translations(hass, language, "entity_component", {"ramses_cc"}))
+            
+        # except:
+        #     _LOGGER.exception("Error occured while loading hass translations")
+        #     hass_resources.update({})
 
         load_icons(hass)
         load_paths(hass)
@@ -140,7 +155,26 @@ def process_yaml(hass, entry):
     # Register service sm_dashboard.installed
     hass.services.async_register(DOMAIN, "installed", handle_installed)
 
+    async def _async_load_hass_translations():
+        await async_load_hass_translation(hass, language)
+
+    hass.bus.async_listen_once(
+        EVENT_HOMEASSISTANT_STARTED,
+        _async_load_hass_translations,
+    )
+
     _LOGGER.info('Finished function to process all yaml files!')
+
+
+async def async_load_hass_translation(hass, language):
+    try:
+        hass_resources.update(await async_get_translations(hass, language, "entity_component"))
+        hass_resources.update(await async_get_translations(hass, language, "entity"))
+        hass_resources.update(await async_get_translations(hass, language, "state"))
+        
+    except:
+        _LOGGER.exception("Error occured while loading hass translations")
+        hass_resources.update({})
 
 
 def load_icons(hass):
@@ -176,8 +210,8 @@ def reload_configuration(hass):
         
         #Translations
         language = sm_dashboard_global["language"]
-        translations = load_yamll(hass.config.path("lovelace/sm-dashboard/resources/translations/"+language+".yaml"))
-        sm_dashboard_translations.update(translations[language])
+        sm_translations = load_yamll(hass.config.path("lovelace/sm-dashboard/resources/translations/"+language+".yaml"))
+        sm_dashboard_translations.update(sm_translations[language])
 
         load_icons(hass)
         load_paths(hass)

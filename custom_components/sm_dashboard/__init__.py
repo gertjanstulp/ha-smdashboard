@@ -3,7 +3,7 @@ import logging
 from .load_plugins import load_plugins
 from .load_dashboard import load_dashboard
 from .const import DOMAIN
-from .process_yaml import process_yaml
+from .process_yaml import async_process_yaml
 from .notifications import notifications
 
 from homeassistant.components import frontend
@@ -28,7 +28,7 @@ async def async_setup(hass, config):
 async def async_setup_entry(hass, entry):
     _LOGGER.info("Setting up sm_dashboard entry")
 
-    process_yaml(hass, entry)
+    await async_process_yaml(hass, entry)
 
     load_dashboard(hass, entry)
 
@@ -46,7 +46,7 @@ async def async_remove_entry(hass, config_entry):
 async def _update_listener(hass, config_entry):
     _LOGGER.info('Updating sm_dashboard listener')
 
-    process_yaml(hass, config_entry)
+    await async_process_yaml(hass, config_entry)
 
     hass.bus.async_fire("sm_dashboard_reload")
 
