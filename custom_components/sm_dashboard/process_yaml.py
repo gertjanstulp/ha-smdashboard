@@ -155,7 +155,7 @@ async def async_process_yaml(hass, entry):
     # Register service sm_dashboard.installed
     hass.services.async_register(DOMAIN, "installed", handle_installed)
 
-    async def _async_load_hass_translations():
+    async def _async_load_hass_translations(*args):
         await async_load_hass_translation(hass, language)
 
     hass.bus.async_listen_once(
