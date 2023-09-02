@@ -16,7 +16,7 @@ from homeassistant.util.yaml.objects import NodeDictClass
 
 from .const import DOMAIN, VERSION
 
-from .jinja import fromjson, dayfromnow, windicon
+from .jinja import fromjson, dayfromnow, windicon, now, weathericon
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,6 +25,8 @@ jinja = jinja2.Environment(loader=jinja2.FileSystemLoader("/"))
 jinja.filters['fromjson'] = fromjson
 jinja.filters['dayfromnow'] = dayfromnow
 jinja.filters['windicon'] = windicon
+jinja.globals['now'] = now
+jinja.filters['weathericon'] = weathericon
 
 sm_dashboard_global = {}
 sm_dashboard_translations = {}

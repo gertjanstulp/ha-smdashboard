@@ -1,6 +1,9 @@
 import datetime
 import json
 
+from homeassistant.util import dt as dt_util
+
+
 def fromjson(value):
     return json.loads(value)
 
@@ -41,3 +44,26 @@ def windicon(direction):
         "NNW": "mdi:arrow-down-thick"
     }
     return switcher.get(direction, "mdi:sync")
+
+def weathericon(weather):
+    switcher = {
+        "clear-night": "mdi:weather-night",
+        "cloudy": "mdi:weather-cloudy",
+        "exceptional": "mdi:weather-sunny-alert",
+        "fog": "mdi:weather-fog",
+        "hail": "mdi:weather-hail",
+        "lightning": "mdi:weather-lightning",
+        "lightning-rainy": "mdi:weather-lightning-rainy",
+        "partlycloudy": "mdi:weather-partly-cloudy",
+        "pouring": "mdi:weather-pouring",
+        "rainy": "mdi:weather-rainy",
+        "snowy": "mdi:weather-snowy",
+        "snowy-rainy": "mdi:weather-snowy-rainy",
+        "sunny": "mdi:weather-sunny",
+        "windy": "mdi:weather-windy",
+        "default": "mdi:crosshairs-question"
+    }
+    return switcher.get(weather, "mdi:weather")
+
+def now():
+    return dt_util.now()

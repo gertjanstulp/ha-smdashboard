@@ -1,10 +1,8 @@
 import logging
 
-from .load_plugins import load_plugins
 from .load_dashboard import load_dashboard
 from .const import DOMAIN
 from .process_yaml import async_process_yaml
-from .notifications import notifications
 
 from homeassistant.components import frontend
 
@@ -14,14 +12,9 @@ async def async_setup(hass, config):
     _LOGGER.info("Setting up sm_dashboard")
     
     hass.data[DOMAIN] = {
-        "notifications": {},
         "commands": {},
         'latest_version': ""
     }
-
-    load_plugins(hass, DOMAIN)
-
-    notifications(hass, DOMAIN)
 
     return True
 
