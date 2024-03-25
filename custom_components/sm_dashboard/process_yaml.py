@@ -1,12 +1,7 @@
-import asyncio
-import datetime
 import logging
 import os
-import logging
-import json
 import io
 import jinja2
-from collections import OrderedDict
 
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
 from homeassistant.exceptions import HomeAssistantError
@@ -39,10 +34,10 @@ LANGUAGES = {
     "Dutch": "nl"
 }
 
-def load_yamll(fname, secrets = None, args={}):
+
+def load_yamll(fname, secrets=None, args={}):
     _LOGGER.info("Load_yamll: %s", fname)
     try:
-        
         _process_yaml = False
         with open(fname, encoding="utf-8") as f:
             if f.readline().lower().startswith(("# sm_dashboard")):
@@ -57,18 +52,19 @@ def load_yamll(fname, secrets = None, args={}):
                 "_hass_resources": hass_resources,
                 "_smd_icons": sm_dashboard_icons,
                 "_smd_paths": sm_dashboard_paths,
-                }))
+            }))
             stream.name = fname
-            return loader.yaml.load(stream, Loader=lambda _stream: loader.SafeLineLoader(_stream, secrets)) or NodeDictClass()
+            return loader.yaml.load(stream, Loader=lambda _stream: loader.PythonSafeLoader(_stream, secrets)) or NodeDictClass()
         else:
             with open(fname, encoding="utf-8") as config_file:
-                return loader.yaml.load(config_file, Loader=lambda stream: loader.SafeLineLoader(stream, secrets)) or NodeDictClass()
+                return loader.yaml.load(config_file, Loader=lambda stream: loader.PythonSafeLoader(stream, secrets)) or NodeDictClass()
     except loader.yaml.YAMLError as exc:
         _LOGGER.error(str(exc))
         raise HomeAssistantError(exc)
     except UnicodeDecodeError as exc:
         _LOGGER.error("Unable to read file %s: %s", fname, exc)
         raise HomeAssistantError(exc)
+
 
 def _include_yaml(ldr, node):
     vars = {}
@@ -87,8 +83,10 @@ def _include_yaml(ldr, node):
         _LOGGER.error("Unable to include file %s: %s", fname, exc)
         raise HomeAssistantError(exc)
 
+
 loader.load_yaml = load_yamll
-loader.SafeLineLoader.add_constructor("!include", _include_yaml)
+loader.PythonSafeLoader.add_constructor("!include", _include_yaml)
+
 
 async def async_process_yaml(hass, entry):
 
@@ -99,13 +97,14 @@ async def async_process_yaml(hass, entry):
             installed = "true"
         else:
             installed = "false"
-        
-        #Translations
+
+        # Translations
         if ("language" in entry.options):
             language = LANGUAGES[entry.options["language"]]
         else:
             language = "en"
-        sm_translations = load_yamll(hass.config.path(f"lovelace/sm-dashboard/resources/translations/{language}.yaml"))
+        sm_translations = load_yamll(hass.config.path(
+            f"lovelace/sm-dashboard/resources/translations/{language}.yaml"))
         sm_dashboard_translations.update(sm_translations[language])
 
         # try:
@@ -113,7 +112,7 @@ async def async_process_yaml(hass, entry):
         #     hass_resources.update(await async_get_translations(hass, language, "entity"))
         #     hass_resources.update(await async_get_translations(hass, language, "state"))
         #     hass_resources.update(await async_get_translations(hass, language, "entity_component", {"ramses_cc"}))
-            
+
         # except:
         #     _LOGGER.exception("Error occured while loading hass translations")
         #     hass_resources.update({})
@@ -133,7 +132,7 @@ async def async_process_yaml(hass, entry):
         hass.bus.async_fire("sm_dashboard_reload")
 
     async def handle_reload(call):
-        #Service call to reload SM Theme config
+        # Service call to reload SM Theme config
         _LOGGER.info("Reload SM Dashboard Configuration")
 
         reload_configuration(hass)
@@ -141,9 +140,8 @@ async def async_process_yaml(hass, entry):
     # Register service sm_dashboard.reload
     hass.services.async_register(DOMAIN, "reload", handle_reload)
 
-
     async def handle_installed(call):
-        #Service call to Change the installed key in global config for SM dashboard
+        # Service call to Change the installed key in global config for SM dashboard
         _LOGGER.info("Handle installed")
 
         path = hass.config.path("custom_components/sm_dashboard/.installed")
@@ -173,14 +171,15 @@ async def async_load_hass_translation(hass, language):
         hass_resources.update(await async_get_translations(hass, language, "entity_component"))
         hass_resources.update(await async_get_translations(hass, language, "entity"))
         hass_resources.update(await async_get_translations(hass, language, "state"))
-        
+
     except:
         _LOGGER.exception("Error occured while loading hass translations")
         hass_resources.update({})
 
 
 def load_icons(hass):
-    icons = load_yamll(hass.config.path("lovelace/sm-dashboard/resources/icons.yaml"))
+    icons = load_yamll(hass.config.path(
+        "lovelace/sm-dashboard/resources/icons.yaml"))
     sm_dashboard_icons.clear()
     if isinstance(icons, dict):
         icons_data = icons.get("icons", {})
@@ -189,7 +188,8 @@ def load_icons(hass):
 
 
 def load_paths(hass):
-    paths = load_yamll(hass.config.path("lovelace/sm-dashboard/resources/paths.yaml"))
+    paths = load_yamll(hass.config.path(
+        "lovelace/sm-dashboard/resources/paths.yaml"))
     sm_dashboard_paths.clear()
     if isinstance(paths, dict):
         paths_data = paths.get("paths", {})
@@ -209,13 +209,14 @@ def reload_configuration(hass):
                 ("installed", installed)
             ]
         )
-        
-        #Translations
+
+        # Translations
         language = sm_dashboard_global["language"]
-        sm_translations = load_yamll(hass.config.path("lovelace/sm-dashboard/resources/translations/"+language+".yaml"))
+        sm_translations = load_yamll(hass.config.path(
+            "lovelace/sm-dashboard/resources/translations/"+language+".yaml"))
         sm_dashboard_translations.update(sm_translations[language])
 
         load_icons(hass)
         load_paths(hass)
-                
+
     hass.bus.async_fire("sm_dashboard_reload")
