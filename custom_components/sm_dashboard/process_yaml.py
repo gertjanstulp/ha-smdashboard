@@ -4,6 +4,7 @@ import io
 import jinja2
 
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
+from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.translation import async_get_translations
 from homeassistant.util.yaml import loader
@@ -35,6 +36,10 @@ LANGUAGES = {
 }
 
 
+async def async_load_yamll(hass: HomeAssistant, fname, secrets=None, args={}):
+    return await hass.async_add_executor_job(load_yamll, fname, secrets, args)
+
+ 
 def load_yamll(fname, secrets=None, args={}):
     _LOGGER.info("Load_yamll: %s", fname)
     try:
@@ -92,38 +97,19 @@ async def async_process_yaml(hass, entry):
 
     _LOGGER.info('Start of function to process all yaml files!')
 
+    if ("language" in entry.options):
+        language = LANGUAGES[entry.options["language"]]
+    else:
+        language = "en"
+
     if os.path.exists(hass.config.path("lovelace/sm-dashboard/ui-lovelace.yaml")):
-        if os.path.exists(hass.config.path("custom_components/sm_dashboard/.installed")):
-            installed = "true"
-        else:
-            installed = "false"
-
-        # Translations
-        if ("language" in entry.options):
-            language = LANGUAGES[entry.options["language"]]
-        else:
-            language = "en"
-        sm_translations = load_yamll(hass.config.path(
-            f"lovelace/sm-dashboard/resources/translations/{language}.yaml"))
-        sm_dashboard_translations.update(sm_translations[language])
-
-        # try:
-        #     hass_resources.update(await async_get_translations(hass, language, "entity_component"))
-        #     hass_resources.update(await async_get_translations(hass, language, "entity"))
-        #     hass_resources.update(await async_get_translations(hass, language, "state"))
-        #     hass_resources.update(await async_get_translations(hass, language, "entity_component", {"ramses_cc"}))
-
-        # except:
-        #     _LOGGER.exception("Error occured while loading hass translations")
-        #     hass_resources.update({})
-
-        load_icons(hass)
-        load_paths(hass)
+        await async_load_translations(hass, language)
+        await async_load_icons(hass)
+        await async_load_paths(hass)
 
         sm_dashboard_global.update(
             [
                 ("version", VERSION),
-                ("installed", installed),
                 ("language", language),
                 ("hass", hass)
             ]
@@ -135,25 +121,10 @@ async def async_process_yaml(hass, entry):
         # Service call to reload SM Theme config
         _LOGGER.info("Reload SM Dashboard Configuration")
 
-        reload_configuration(hass)
+        await async_reload_configuration(hass)
 
     # Register service sm_dashboard.reload
     hass.services.async_register(DOMAIN, "reload", handle_reload)
-
-    async def handle_installed(call):
-        # Service call to Change the installed key in global config for SM dashboard
-        _LOGGER.info("Handle installed")
-
-        path = hass.config.path("custom_components/sm_dashboard/.installed")
-
-        if not os.path.exists(path):
-            _LOGGER.info("Create .installed file")
-            open(path, 'w').close()
-
-        reload_configuration(hass)
-
-    # Register service sm_dashboard.installed
-    hass.services.async_register(DOMAIN, "installed", handle_installed)
 
     async def _async_load_hass_translations(*args):
         await async_load_hass_translation(hass, language)
@@ -177,46 +148,43 @@ async def async_load_hass_translation(hass, language):
         hass_resources.update({})
 
 
-def load_icons(hass):
-    icons = load_yamll(hass.config.path(
-        "lovelace/sm-dashboard/resources/icons.yaml"))
+async def async_load_translations(hass, language: str):
+    sm_dashboard_translations.clear()
+    translations_file = hass.config.path(f"lovelace/sm-dashboard/resources/translations/{language}.yaml")
+    if not os.path.exists(translations_file):
+        return
+    translations = await async_load_yamll(hass, translations_file)
+    sm_dashboard_translations.update(translations[language])
+
+
+async def async_load_icons(hass):
     sm_dashboard_icons.clear()
+    icons_file = hass.config.path("lovelace/sm-dashboard/resources/icons.yaml")
+    if not os.path.exists(icons_file):
+        return
+    icons = await async_load_yamll(hass, icons_file) 
     if isinstance(icons, dict):
         icons_data = icons.get("icons", {})
         if icons_data:
             sm_dashboard_icons.update(icons_data)
 
 
-def load_paths(hass):
-    paths = load_yamll(hass.config.path(
-        "lovelace/sm-dashboard/resources/paths.yaml"))
+async def async_load_paths(hass):
     sm_dashboard_paths.clear()
+    paths_file = hass.config.path("lovelace/sm-dashboard/resources/paths.yaml")
+    if not os.path.exists(paths_file):
+        return
+    paths = await async_load_yamll(hass, paths_file)
     if isinstance(paths, dict):
         paths_data = paths.get("paths", {})
         if paths_data:
             sm_dashboard_paths.update(paths_data)
 
 
-def reload_configuration(hass):
+async def async_reload_configuration(hass):
     if os.path.exists(hass.config.path("lovelace/sm-dashboard/ui-lovelace.yaml")):
-        if os.path.exists(hass.config.path("custom_components/sm_dashboard/.installed")):
-            installed = "true"
-        else:
-            installed = "false"
-
-        sm_dashboard_global.update(
-            [
-                ("installed", installed)
-            ]
-        )
-
-        # Translations
-        language = sm_dashboard_global["language"]
-        sm_translations = load_yamll(hass.config.path(
-            "lovelace/sm-dashboard/resources/translations/"+language+".yaml"))
-        sm_dashboard_translations.update(sm_translations[language])
-
-        load_icons(hass)
-        load_paths(hass)
+        await async_load_translations(hass, sm_dashboard_global["language"])
+        await async_load_icons(hass)
+        await async_load_paths(hass)
 
     hass.bus.async_fire("sm_dashboard_reload")
