@@ -2,13 +2,13 @@ import logging
 import os
 import io
 import jinja2
+import annotatedyaml
 
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.translation import async_get_translations
-from homeassistant.util.yaml import loader
-from homeassistant.util.yaml.objects import NodeDictClass
+# from homeassistant.util.yaml.objects import NodeDictClass
 
 from .const import DOMAIN, VERSION
 
@@ -59,11 +59,11 @@ def load_yamll(fname, secrets=None, args={}):
                 "_smd_paths": sm_dashboard_paths,
             }))
             stream.name = fname
-            return loader.yaml.load(stream, Loader=lambda _stream: loader.PythonSafeLoader(_stream, secrets)) or NodeDictClass()
+            return annotatedyaml.loader.yaml.load(stream, Loader=lambda _stream: annotatedyaml.loader.PythonSafeLoader(_stream, secrets)) or annotatedyaml.loader.NodeDictClass()
         else:
             with open(fname, encoding="utf-8") as config_file:
-                return loader.yaml.load(config_file, Loader=lambda stream: loader.PythonSafeLoader(stream, secrets)) or NodeDictClass()
-    except loader.yaml.YAMLError as exc:
+                return annotatedyaml.loader.yaml.load(config_file, Loader=lambda stream: annotatedyaml.loader.PythonSafeLoader(stream, secrets)) or annotatedyaml.loader.NodeDictClass()
+    except annotatedyaml.loader.yaml.YAMLError as exc:
         _LOGGER.error(str(exc))
         raise HomeAssistantError(exc)
     except UnicodeDecodeError as exc:
@@ -82,15 +82,15 @@ def _include_yaml(ldr, node):
     try:
         yaml = load_yamll(fname, ldr.secrets, args=vars)
         if additional and isinstance(additional, list) and len(additional) > 0:
-            yaml = NodeDictClass(yaml | additional[0])
-        return loader._add_reference(yaml, ldr, node)
+            yaml = annotatedyaml.loader.NodeDictClass(yaml | additional[0])
+        return annotatedyaml.loader._add_reference(yaml, ldr, node)
     except FileNotFoundError as exc:
         _LOGGER.error("Unable to include file %s: %s", fname, exc)
         raise HomeAssistantError(exc)
 
 
-loader.load_yaml = load_yamll
-loader.PythonSafeLoader.add_constructor("!include", _include_yaml)
+annotatedyaml.loader.load_yaml = load_yamll
+annotatedyaml.loader.PythonSafeLoader.add_constructor("!include", _include_yaml)
 
 
 async def async_process_yaml(hass, entry):
