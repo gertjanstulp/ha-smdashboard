@@ -1,5 +1,5 @@
 {
-    "name": "SM Dashboard",
+    "name": "SMD",
     "render_readme": false,
-    "homeassistant": "2021.5.0"
+    "homeassistant": "2025.12.1"
 }

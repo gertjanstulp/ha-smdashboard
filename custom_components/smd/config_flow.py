@@ -15,7 +15,7 @@ LANGUAGES = [
 ]
 
 @config_entries.HANDLERS.register(DOMAIN)
-class SmDashboardConfigFlow(config_entries.ConfigFlow):
+class SMDashboardConfigFlow(config_entries.ConfigFlow):
     async def async_step_user(self, user_input=None):
         if self._async_current_entries():
             return self.async_abort(reason="single_instance_allowed")
@@ -24,9 +24,9 @@ class SmDashboardConfigFlow(config_entries.ConfigFlow):
     @staticmethod
     @callback
     def async_get_options_flow(config_entry):
-        return SmDashboardEditFlow(config_entry)
+        return SMDashboardEditFlow(config_entry)
 
-class SmDashboardEditFlow(config_entries.OptionsFlow):
+class SMDashboardEditFlow(config_entries.OptionsFlow):
     def __init__(self, config_entry):
         self.config_entry = config_entry
 
