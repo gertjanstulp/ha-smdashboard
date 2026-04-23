@@ -106,9 +106,9 @@ async def async_process_yaml(hass, entry):
     rootdir = hass.config.path("config/smd")
 
     if os.path.exists(f"{rootdir}/dashboard.yaml"):
-        await async_load_translations(hass, language)
-        await async_load_icons(hass)
-        await async_load_paths(hass)
+        await async_load_translations(hass, language, rootdir)
+        await async_load_icons(hass, rootdir)
+        await async_load_paths(hass, rootdir)
 
         smd_global.update(
             [
@@ -152,18 +152,20 @@ async def async_load_hass_translation(hass, language):
         hass_resources.update({})
 
 
-async def async_load_translations(hass, language: str):
+async def async_load_translations(hass, language: str, rootdir: str):
     smd_translations.clear()
     translations_file = f"{rootdir}/resources/translations/{language}.yaml"
+    _LOGGER.info('Loading translations from %s', translations_file)
     if not os.path.exists(translations_file):
         return
     translations = await async_load_yamll(hass, translations_file)
     smd_translations.update(translations[language])
 
 
-async def async_load_icons(hass):
+async def async_load_icons(hass, rootdir: str):
     smd_icons.clear()
     icons_file = f"{rootdir}/resources/icons.yaml"
+    _LOGGER.info('Loading icons from %s', icons_file)
     if not os.path.exists(icons_file):
         return
     icons = await async_load_yamll(hass, icons_file) 
@@ -173,9 +175,10 @@ async def async_load_icons(hass):
             smd_icons.update(icons_data)
 
 
-async def async_load_paths(hass):
+async def async_load_paths(hass, rootdir: str):
     smd_paths.clear()
     paths_file = f"{rootdir}/resources/paths.yaml"
+    _LOGGER.info('Loading paths from %s', paths_file)
     if not os.path.exists(paths_file):
         return
     paths = await async_load_yamll(hass, paths_file)
@@ -186,9 +189,10 @@ async def async_load_paths(hass):
 
 
 async def async_reload_configuration(hass):
+    rootdir = hass.config.path("config/smd")
     if os.path.exists(f"{rootdir}/dashboard.yaml"):
-        await async_load_translations(hass, smd_global["language"])
-        await async_load_icons(hass)
-        await async_load_paths(hass)
+        await async_load_translations(hass, smd_global["language"], rootdir)
+        await async_load_icons(hass, rootdir)
+        await async_load_paths(hass, rootdir)
 
     hass.bus.async_fire("smd_reload")

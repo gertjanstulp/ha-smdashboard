@@ -27,15 +27,17 @@ class SMDashboardConfigFlow(config_entries.ConfigFlow):
         return SMDashboardEditFlow(config_entry)
 
 class SMDashboardEditFlow(config_entries.OptionsFlow):
+    _config_entry = None
+    
     def __init__(self, config_entry):
-        self.config_entry = config_entry
+        self._config_entry = config_entry
 
     async def async_step_init(self, user_input=None):
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
         schema = {
-            vol.Optional(LANGUAGE, default=self.config_entry.options.get("language", "English")): vol.In(LANGUAGES)
+            vol.Optional(LANGUAGE, default=self._config_entry.options.get("language", "English")): vol.In(LANGUAGES)
         }
 
         return self.async_show_form(
