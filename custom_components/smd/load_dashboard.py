@@ -8,14 +8,14 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 def load_dashboard(hass, entry):
-    _LOGGER.info("Loading dashboard sm_dashboard")
+    _LOGGER.info("Loading SMD dashboard")
 
-    dashboard_url = "sm-dashboard"
+    dashboard_url = "smd"
     dashboard_config = {
         "mode": "yaml",
         "icon": "mdi:alpha-d-box",
         "title": "Dashboard",
-        "filename": "lovelace/sm-dashboard/ui-lovelace.yaml",
+        "filename": "config/smd/dashboard.yaml",
         "show_in_sidebar": True,
         "require_admin": False,
     }

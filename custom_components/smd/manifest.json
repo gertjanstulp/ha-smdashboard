@@ -1,6 +1,6 @@
 {
-  "domain": "sm_dashboard",
-  "name": "SM Dashboard",
+  "domain": "smd",
+  "name": "SMD",
   "documentation": "",
   "issue_tracker": "",
   "version": "1.0.0",

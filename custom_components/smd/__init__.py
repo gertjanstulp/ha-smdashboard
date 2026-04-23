@@ -9,7 +9,7 @@ from homeassistant.components import frontend
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup(hass, config):
-    _LOGGER.info("Setting up sm_dashboard")
+    _LOGGER.info("Setting up SMD")
     
     hass.data[DOMAIN] = {
         "commands": {},
@@ -19,7 +19,7 @@ async def async_setup(hass, config):
     return True
 
 async def async_setup_entry(hass, entry):
-    _LOGGER.info("Setting up sm_dashboard entry")
+    _LOGGER.info("Setting up SMD entry")
 
     await async_process_yaml(hass, entry)
 
@@ -31,16 +31,16 @@ async def async_setup_entry(hass, entry):
 
 
 async def async_remove_entry(hass, config_entry):
-    _LOGGER.info("Removin sm_dashboard")
+    _LOGGER.info("Removing SMD")
 
-    frontend.async_remove_panel(hass, "sm-dashboard")
+    frontend.async_remove_panel(hass, "smd")
 
 
 async def _update_listener(hass, config_entry):
-    _LOGGER.info('Updating sm_dashboard listener')
+    _LOGGER.info('Updating SMD listener')
 
     await async_process_yaml(hass, config_entry)
 
-    hass.bus.async_fire("sm_dashboard_reload")
+    hass.bus.async_fire("smd_reload")
 
     return True
